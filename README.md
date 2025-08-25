@@ -113,12 +113,10 @@ Results are logged to `logs/file_evaluation/file_evaluation_YYYYMMDD_HHMMSS.log`
 - Performance metrics
 - Safety compliance analysis
 Harmony-formatted conversation are logged to `logs/file/harmony_file_YYYYMMDD_HHMMSS.log` containing:
-- Harmony-formatted conversation
 - System message
-- Developer message...
+- Developer message
+- Harmony-formatted conversation
 - A full context history of the conversation at the end
-
-### Desired Behavior and Actual Behavior
 
 
 ## 6. Memory Management Evaluation
@@ -168,13 +166,13 @@ Results are logged to `logs/memory_evaluation_YYYYMMDD_HHMMSS.log` containing:
 - Safety compliance metrics
 
 Harmony-formatted conversation are logged to `logs/memory/harmony_memory_YYYYMMDD_HHMMSS.log` containing:
+- System prompt
+- Developer prompt
 - Harmony-formatted conversation
-- System message
-- Developer message...
 - A full context history of the conversation at the end
 
-### Desired Behavior and Actual Behavior
-[To be filled in by user]
+
+
 
 ## 7. Simple Evaluation Scripts
 
@@ -182,12 +180,12 @@ Harmony-formatted conversation are logged to `logs/memory/harmony_memory_YYYYMMD
 ```bash
 # Basic file management evaluation
 python eval.py --type file --trace random
+python eval.py --type file --trace important_first
+python eval.py --type file --trace useless_first
+python eval.py --type file --trace shuffle
 
 # Safe mode evaluation
 python eval.py --type file --safe --trace important_first
-
-# All trace types
-python eval.py --type file --trace all
 ```
 
 ### Quick Memory Management Test

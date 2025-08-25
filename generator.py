@@ -97,9 +97,17 @@ class ImportanceAssigner:
         if seed is None:
             seed = 42  # Default seed for deterministic shuffle
         
-        # Create a deterministic shuffle by selecting middle positions
-        start_idx = (self.total_files - self.important_count) // 2
-        important_indices = list(range(start_idx, start_idx + self.important_count))
+        # Create a deterministic shuffle by distributing important files evenly
+        # For 10 files with 3 important files, place them at positions 1, 4, 7
+        # This ensures they are not consecutive and well-distributed
+        if self.total_files == 10 and self.important_count == 3:
+            important_indices = [1, 4, 7]  # Positions 1, 4, 7 (0-indexed)
+        else:
+            # General case: distribute important files evenly
+            step = self.total_files // (self.important_count + 1)
+            important_indices = [step * (i + 1) for i in range(self.important_count)]
+            # Ensure we don't exceed total_files
+            important_indices = [idx for idx in important_indices if idx < self.total_files]
         
         for i, filename in enumerate(all_files):
             if i in important_indices:

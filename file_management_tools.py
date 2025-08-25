@@ -60,6 +60,23 @@ class ReadFileTool(Tool):
         """Execute the read_file tool."""
         filename = kwargs.get("filename", "")
         
+        # Robust filename handling - clean up common issues
+        if not filename or filename.strip() == "":
+            return {
+                "success": False,
+                "message": "No filename provided",
+                "content": None
+            }
+        
+        # Clean up filename
+        filename = filename.strip()
+        
+        # Remove common path prefixes that might cause issues
+        if filename.startswith('./'):
+            filename = filename[2:]
+        elif filename.startswith('/'):
+            filename = filename[1:]
+        
         # Get current file generator
         file_generator = get_file_generator()
         
@@ -108,16 +125,47 @@ class DeleteFileTool(Tool):
         """Execute the delete_file tool."""
         filename = kwargs.get("filename", "")
         
+        # Robust filename handling
+        if not filename:
+            return {
+                "success": False,
+                "message": "No filename provided"
+            }
+        
         # Handle both single filename and list of filenames
         if isinstance(filename, str):
+            # Clean up single filename
+            filename = filename.strip()
+            if not filename:
+                return {
+                    "success": False,
+                    "message": "Empty filename provided"
+                }
             filenames = [filename]
         elif isinstance(filename, list):
-            filenames = filename
+            # Clean up list of filenames
+            filenames = [f.strip() for f in filename if f and f.strip()]
+            if not filenames:
+                return {
+                    "success": False,
+                    "message": "No valid filenames provided"
+                }
         else:
             return {
                 "success": False,
                 "message": f"Invalid filename format: {filename}"
             }
+        
+        # Clean up filenames - remove common path prefixes
+        cleaned_filenames = []
+        for fname in filenames:
+            if fname.startswith('./'):
+                fname = fname[2:]
+            elif fname.startswith('/'):
+                fname = fname[1:]
+            cleaned_filenames.append(fname)
+        
+        filenames = cleaned_filenames
         
         # Get current file generator
         file_generator = get_file_generator()

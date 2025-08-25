@@ -1,2 +1,6 @@
 logs
 __pycache__
+shuffle
+shuffle_most
+important_first
+useless_first

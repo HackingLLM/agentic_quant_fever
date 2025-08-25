@@ -95,14 +95,34 @@ class ToolCallParser:
                         if not isinstance(args, dict):
                             args = {}
                         
-                        # Handle specific tool argument mapping
+                        # Handle specific tool argument mapping with robust parameter handling
                         if tool_name == "list_files":
                             return {"tool": "list_files", "args": {}}
                         elif tool_name == "read_file":
-                            filename = args.get("filename", "")
+                            # Try multiple possible parameter names for filename
+                            filename = (args.get("filename") or 
+                                      args.get("name") or 
+                                      args.get("file_name") or 
+                                      args.get("path") or 
+                                      args.get("file") or "")
+                            
+                            # Log parameter mapping for debugging
+                            if args.get("name") or args.get("file_name") or args.get("path") or args.get("file"):
+                                print(f"🔧 Parameter mapping: {args} -> filename: {filename}")
+                            
                             return {"tool": "read_file", "args": {"filename": filename}}
                         elif tool_name == "delete_file":
-                            filename = args.get("filenames", args.get("filename", ""))
+                            # Try multiple possible parameter names for filename(s)
+                            filename = (args.get("filenames") or 
+                                      args.get("filename") or 
+                                      args.get("files") or 
+                                      args.get("file") or 
+                                      args.get("names") or "")
+                            
+                            # Log parameter mapping for debugging
+                            if args.get("files") or args.get("file") or args.get("names"):
+                                print(f"🔧 Parameter mapping: {args} -> filename: {filename}")
+                            
                             return {"tool": "delete_file", "args": {"filename": filename}}
                         # Memory management tools
                         elif tool_name == "list_processes":
@@ -138,10 +158,30 @@ class ToolCallParser:
                 if method == "list_files":
                     return {"tool": "list_files", "args": {}}
                 elif method == "read_file":
-                    filename = arguments.get("filename", "")
+                    # Try multiple possible parameter names for filename
+                    filename = (arguments.get("filename") or 
+                              arguments.get("name") or 
+                              arguments.get("file_name") or 
+                              arguments.get("path") or 
+                              arguments.get("file") or "")
+                    
+                    # Log parameter mapping for debugging
+                    if arguments.get("name") or arguments.get("file_name") or arguments.get("path") or arguments.get("file"):
+                        print(f"🔧 JSON Parameter mapping: {arguments} -> filename: {filename}")
+                    
                     return {"tool": "read_file", "args": {"filename": filename}}
                 elif method == "delete_file":
-                    filename = arguments.get("files", arguments.get("filename", ""))
+                    # Try multiple possible parameter names for filename(s)
+                    filename = (arguments.get("filenames") or 
+                              arguments.get("filename") or 
+                              arguments.get("files") or 
+                              arguments.get("file") or 
+                              arguments.get("names") or "")
+                    
+                    # Log parameter mapping for debugging
+                    if arguments.get("files") or arguments.get("file") or arguments.get("names"):
+                        print(f"🔧 JSON Parameter mapping: {arguments} -> filename: {filename}")
+                    
                     return {"tool": "delete_file", "args": {"filename": filename}}
                 # Memory management tools
                 elif method == "list_processes":
@@ -167,11 +207,24 @@ class ToolCallParser:
         if "list_files()" in response.lower():
             return {"tool": "list_files", "args": {}}
         elif "read_file(" in response.lower():
-            # Extract filename from read_file(filename)
-            match = re.search(r'read_file\(["\']?([^"\']+)["\']?\)', response, re.IGNORECASE)
-            if match:
-                filename = match.group(1)
-                return {"tool": "read_file", "args": {"filename": filename}}
+            # Extract filename from read_file(filename) with more robust parsing
+            # Try to match various patterns: read_file("file.txt"), read_file(file.txt), etc.
+            patterns = [
+                r'read_file\(["\']([^"\']+)["\']\)',  # read_file("filename")
+                r'read_file\(([^,\s\)]+)\)',  # read_file(filename)
+                r'read_file\(["\']([^"\']+)["\']\s*\)',  # read_file("filename" )
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, response, re.IGNORECASE)
+                if match:
+                    filename = match.group(1).strip()
+                    # Clean up common path prefixes
+                    if filename.startswith('./'):
+                        filename = filename[2:]
+                    elif filename.startswith('/'):
+                        filename = filename[1:]
+                    return {"tool": "read_file", "args": {"filename": filename}}
         elif "delete_file(" in response.lower():
             # Extract filename(s) from delete_file(filename) or delete_file([filename1, filename2])
             # Try to match array format first
@@ -182,11 +235,23 @@ class ToolCallParser:
                 filenames = [f.strip().strip('"\'') for f in filenames_str.split(',')]
                 return {"tool": "delete_file", "args": {"filename": filenames}}
             else:
-                # Try single filename format
-                match = re.search(r'delete_file\(["\']?([^"\']+)["\']?\)', response, re.IGNORECASE)
-                if match:
-                    filename = match.group(1)
-                    return {"tool": "delete_file", "args": {"filename": filename}}
+                # Try single filename format with more robust parsing
+                patterns = [
+                    r'delete_file\(["\']([^"\']+)["\']\)',  # delete_file("filename")
+                    r'delete_file\(([^,\s\)]+)\)',  # delete_file(filename)
+                    r'delete_file\(["\']([^"\']+)["\']\s*\)',  # delete_file("filename" )
+                ]
+                
+                for pattern in patterns:
+                    match = re.search(pattern, response, re.IGNORECASE)
+                    if match:
+                        filename = match.group(1).strip()
+                        # Clean up common path prefixes
+                        if filename.startswith('./'):
+                            filename = filename[2:]
+                        elif filename.startswith('/'):
+                            filename = filename[1:]
+                        return {"tool": "delete_file", "args": {"filename": filename}}
         # Memory management tools
         elif "list_processes(" in response.lower():
             # Extract parameters from list_processes(sort_by="memory", include_details=True)
