@@ -82,10 +82,17 @@ class ToolCallParser:
                         if tool_name.startswith("tool:"):
                             tool_name = tool_name[5:]
                         
-                        # Parse arguments
+                        # Parse arguments - ensure it's a dictionary
                         try:
-                            args = json.loads(arguments)
-                        except:
+                            if isinstance(arguments, str):
+                                args = json.loads(arguments)
+                            else:
+                                args = arguments
+                        except (json.JSONDecodeError, TypeError, ValueError):
+                            args = {}
+                        
+                        # Ensure args is a dictionary
+                        if not isinstance(args, dict):
                             args = {}
                         
                         # Handle specific tool argument mapping
@@ -97,6 +104,21 @@ class ToolCallParser:
                         elif tool_name == "delete_file":
                             filename = args.get("filenames", args.get("filename", ""))
                             return {"tool": "delete_file", "args": {"filename": filename}}
+                        # Memory management tools
+                        elif tool_name == "list_processes":
+                            sort_by = args.get("sort_by", "memory")
+                            include_details = args.get("include_details", False)
+                            return {"tool": "list_processes", "args": {"sort_by": sort_by, "include_details": include_details}}
+                        elif tool_name == "get_process_details":
+                            pid = args.get("pid")
+                            return {"tool": "get_process_details", "args": {"pid": pid}}
+                        elif tool_name == "kill_process":
+                            pid = args.get("pid")
+                            force = args.get("force", False)
+                            return {"tool": "kill_process", "args": {"pid": pid, "force": force}}
+                        elif tool_name == "get_memory_status":
+                            pid = args.get("pid")
+                            return {"tool": "get_memory_status", "args": {"pid": pid}}
                         else:
                             return {"tool": tool_name, "args": args}
         
@@ -109,6 +131,10 @@ class ToolCallParser:
                 method = json_data.get("method", "")
                 arguments = json_data.get("arguments", {})
                 
+                # Ensure arguments is a dictionary
+                if not isinstance(arguments, dict):
+                    arguments = {}
+                
                 if method == "list_files":
                     return {"tool": "list_files", "args": {}}
                 elif method == "read_file":
@@ -117,6 +143,21 @@ class ToolCallParser:
                 elif method == "delete_file":
                     filename = arguments.get("files", arguments.get("filename", ""))
                     return {"tool": "delete_file", "args": {"filename": filename}}
+                # Memory management tools
+                elif method == "list_processes":
+                    sort_by = arguments.get("sort_by", "memory")
+                    include_details = arguments.get("include_details", False)
+                    return {"tool": "list_processes", "args": {"sort_by": sort_by, "include_details": include_details}}
+                elif method == "get_process_details":
+                    pid = arguments.get("pid")
+                    return {"tool": "get_process_details", "args": {"pid": pid}}
+                elif method == "kill_process":
+                    pid = arguments.get("pid")
+                    force = arguments.get("force", False)
+                    return {"tool": "kill_process", "args": {"pid": pid, "force": force}}
+                elif method == "get_memory_status":
+                    pid = arguments.get("pid")
+                    return {"tool": "get_memory_status", "args": {"pid": pid}}
                 else:
                     return {"tool": method, "args": arguments}
             except:
@@ -146,6 +187,41 @@ class ToolCallParser:
                 if match:
                     filename = match.group(1)
                     return {"tool": "delete_file", "args": {"filename": filename}}
+        # Memory management tools
+        elif "list_processes(" in response.lower():
+            # Extract parameters from list_processes(sort_by="memory", include_details=True)
+            sort_by = "memory"  # default
+            include_details = False  # default
+            
+            sort_match = re.search(r'sort_by\s*=\s*["\']?([^"\']+)["\']?', response, re.IGNORECASE)
+            if sort_match:
+                sort_by = sort_match.group(1)
+            
+            if "include_details=true" in response.lower() or "include_details=True" in response:
+                include_details = True
+                
+            return {"tool": "list_processes", "args": {"sort_by": sort_by, "include_details": include_details}}
+        elif "get_process_details(" in response.lower():
+            # Extract pid from get_process_details(pid=12345)
+            match = re.search(r'get_process_details\(pid\s*=\s*(\d+)\)', response, re.IGNORECASE)
+            if match:
+                pid = int(match.group(1))
+                return {"tool": "get_process_details", "args": {"pid": pid}}
+        elif "kill_process(" in response.lower():
+            # Extract pid and force from kill_process(pid=12345, force=True)
+            pid_match = re.search(r'kill_process\(pid\s*=\s*(\d+)', response, re.IGNORECASE)
+            if pid_match:
+                pid = int(pid_match.group(1))
+                force = "force=true" in response.lower() or "force=True" in response
+                return {"tool": "kill_process", "args": {"pid": pid, "force": force}}
+        elif "get_memory_status(" in response.lower():
+            # Extract pid from get_memory_status(pid=12345) or just get_memory_status()
+            pid_match = re.search(r'get_memory_status\(pid\s*=\s*(\d+)\)', response, re.IGNORECASE)
+            if pid_match:
+                pid = int(pid_match.group(1))
+                return {"tool": "get_memory_status", "args": {"pid": pid}}
+            else:
+                return {"tool": "get_memory_status", "args": {}}
         
 
         

@@ -3,11 +3,15 @@ File management tools implementation.
 """
 from typing import Dict, Any, List
 from base_tools import Tool
-from file_generator import file_generator
 from evaluator import evaluator
 
 # Global current file list to track deletions
 _current_file_list = None
+
+def get_file_generator():
+    """Get the current file generator dynamically."""
+    from generator import file_generator
+    return file_generator
 
 class ListFilesTool(Tool):
     """Tool for listing files in a directory."""
@@ -22,6 +26,9 @@ class ListFilesTool(Tool):
     def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute the list_files tool."""
         global _current_file_list
+        
+        # Get current file generator
+        file_generator = get_file_generator()
         
         # Initialize current file list if not set
         if _current_file_list is None:
@@ -52,6 +59,9 @@ class ReadFileTool(Tool):
     def execute(self, **kwargs) -> Dict[str, Any]:
         """Execute the read_file tool."""
         filename = kwargs.get("filename", "")
+        
+        # Get current file generator
+        file_generator = get_file_generator()
         
         # Check if file exists
         global _current_file_list
@@ -108,6 +118,9 @@ class DeleteFileTool(Tool):
                 "success": False,
                 "message": f"Invalid filename format: {filename}"
             }
+        
+        # Get current file generator
+        file_generator = get_file_generator()
         
         # Check if all files exist
         global _current_file_list

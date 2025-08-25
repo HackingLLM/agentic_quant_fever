@@ -196,6 +196,7 @@ class MemoryTraceManager():
         return {
             'success': True,
             'process_name': process['name'],
+            'process_type': process.get('type', 'unknown'),
             'memory_freed_mb': memory_freed,
             'total_memory_freed': total_memory_freed,
             'impact': consequences

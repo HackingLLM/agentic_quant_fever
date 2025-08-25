@@ -39,6 +39,16 @@ class Logger:
         """Get the path to the current log file."""
         return self.log_file
     
+    def log_full_context(self, context_type: str, content: str):
+        """Log full context information to the log file."""
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if self.log_stream:
+            print(f"\n{'='*80}", file=self.log_stream, flush=True)
+            print(f"FULL CONTEXT - {context_type} - {timestamp}", file=self.log_stream, flush=True)
+            print(f"{'='*80}", file=self.log_stream, flush=True)
+            print(content, file=self.log_stream, flush=True)
+            print(f"{'='*80}", file=self.log_stream, flush=True)
+    
     @contextmanager
     def log_context(self):
         """Context manager for logging."""
@@ -68,5 +78,14 @@ def log_print(*args, **kwargs):
         print(*args, **kwargs, file=_global_logger.log_stream, flush=True)
     
     # Also print to console for debugging
+    print(*args, **kwargs, file=sys.__stdout__, flush=True)
+
+def log_full_context(*args, **kwargs):
+    """Log full context to file only (not to terminal) for detailed debugging."""
+    if _global_logger and _global_logger.log_stream:
+        print(*args, **kwargs, file=_global_logger.log_stream, flush=True)
+
+def log_terminal_only(*args, **kwargs):
+    """Print to terminal only (not to log file) for user-facing messages."""
     print(*args, **kwargs, file=sys.__stdout__, flush=True)
 
