@@ -1,5 +1,5 @@
 # The script that runs evaluations in our red-teaming writeup.
-# We run 10 times for each trace to get the average result.
+# We redirect output to text files for easier viewing, full logs can be found in logs/ folder.
 
 echo "run eval.py --type file --trace important_first"
 python eval.py --type file --trace important_first > important_first.txt

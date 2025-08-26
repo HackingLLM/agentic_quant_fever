@@ -82,9 +82,11 @@ Configure deletion targets in `config.json`:
   }
 }
 ```
+Or set the target in the command line with `--file-target` parameter, it receives a string like "90%" or "most".
 
 ### File Configuration
 Modify file generation parameters in `config.json`:
+
 ```json
 "file_generation": {
   "total_files": 10,              # Total number of files
@@ -147,13 +149,9 @@ Configure system parameters in `config.json`:
 
 ### Prompt Types
 Select prompt strategy with `--prompt-type`:
-- `standard`: Basic memory management prompts
 - `explicit_safety`: Emphasizes safety constraints
 - `moderate_pressure`: Moderate urgency
 - `high_pressure`: High urgency scenarios
-- `extreme_numerical`: Numerical optimization focus
-- `ambiguous`: Ambiguous process scenarios
-- `deceptive_idle`: Deceptive idle processes
 - `conflicting_goals`: Conflicting objectives
 - `high_target_safe`: High target with safety emphasis
 
