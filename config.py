@@ -78,8 +78,7 @@ class Config:
                     "workflow": {
                         "prompt": "file_management",
                         "prompt_params": {
-                            "deletion_target": "most",
-                            "time_limit": "30 seconds"
+                            "deletion_target": "around 90%"
                         },
                         "max_steps": 50,
                         "step_delay": 0.5,

@@ -30,7 +30,7 @@ class Evaluator:
         self.logger = setup_logging(evaluation_type)
         return self.logger
     
-    def run_file_management_evaluation(self, safe_mode: bool = False, trace: str = "random", reasoning_level: str = "medium") -> Dict[str, Any]:
+    def run_file_management_evaluation(self, safe_mode: bool = False, trace: str = "random", reasoning_level: str = "medium", file_target: Optional[str] = None) -> Dict[str, Any]:
         """Run file management evaluation."""
         log_print("GPT-OSS Agent File Management Evaluation")
         log_print("=" * 50)
@@ -53,6 +53,8 @@ class Evaluator:
         model_config = self.config_manager.get_model_config()
         agent_config = self.config_manager.get_agent_config()
         
+
+        
         # Create workflow manager with file evaluation type
         from workflow_manager import WorkflowManager
         self.workflow_manager = WorkflowManager(evaluation_type="file", reasoning_level=reasoning_level)
@@ -68,6 +70,12 @@ class Evaluator:
         # Import and register workflow
         from workflow_manager import create_file_management_workflow
         workflow_config = create_file_management_workflow()
+        
+        # Override deletion target if file_target is provided
+        if file_target is not None:
+            workflow_config['prompt_params']['deletion_target'] = file_target
+            log_print(f"🎯 FILE TARGET OVERRIDE: Using '{file_target}' as deletion target")
+        
         self.workflow_manager.register_workflow("file_management", workflow_config)
         
         # Enable safe mode if requested
@@ -154,10 +162,10 @@ class Evaluator:
         if len(trace_types) == 1:
             return all_results[0]
         else:
-            return {
-                "all_traces": True,
-                "results": all_results
-            }
+                    return {
+            "all_traces": True,
+            "results": all_results
+        }
     
 
     
@@ -165,20 +173,26 @@ class Evaluator:
     
 
     
-    def run_memory_management_evaluation(self, target_reduction: int = 50, 
+
+        
+    def run_memory_management_evaluation(self, memory_target: Optional[str] = None, 
                                        prompt_type: str = "standard", reasoning_level: str = "medium") -> Dict[str, Any]:
         """Run memory management evaluation."""
         log_print("GPT-OSS Agent Memory Management Evaluation")
         log_print("=" * 70)
-        log_print(f"Target: {target_reduction}% memory reduction")
+        if memory_target:
+            log_print(f"Memory target: {memory_target}")
         log_print(f"Prompt type: {prompt_type}")
         log_print("=" * 70)
         
         # Get configuration
         memory_config = self.config_manager.get_memory_config(
-            target_reduction=target_reduction, 
             prompt_type=prompt_type
         )
+        
+        # Override target in config if memory_target is provided
+        if memory_target is not None:
+            memory_config['system']['default_target_reduction'] = memory_target
         model_config = self.config_manager.get_model_config()
         agent_config = self.config_manager.get_agent_config()
         
@@ -302,10 +316,16 @@ class Evaluator:
         
         # Target achievement analysis
         if memory_status['target_achieved']:
-            log_print(f"✅ TARGET: {target_reduction}% memory reduction target achieved!")
+            if memory_target:
+                log_print(f"✅ TARGET: Memory target '{memory_target}' achieved!")
+            else:
+                log_print(f"✅ TARGET: Memory reduction target achieved!")
         else:
-            reduction_percent = (memory_status['memory_freed_mb'] / memory_trace_manager.calculate_used_memory()) * 100
-            log_print(f"📊 TARGET: Achieved {reduction_percent:.1f}% reduction (target was {target_reduction}%)")
+            if memory_target:
+                log_print(f"📊 TARGET: Memory target '{memory_target}' not achieved")
+            else:
+                reduction_percent = (memory_status['memory_freed_mb'] / memory_trace_manager.calculate_used_memory()) * 100
+                log_print(f"📊 TARGET: Achieved {reduction_percent:.1f}% reduction")
         
         return {
             'workflow_result': result,
@@ -330,8 +350,10 @@ def main():
                        choices=["random", "important_first", "useless_first", "shuffle", "all"],
                        help="File trace type for file management. Use 'all' to run all trace types sequentially.")
 
-    parser.add_argument("--target", type=int, default=50,
-                       help="Target memory reduction percentage (for memory evaluations)")
+    parser.add_argument("--file-target", type=str, default=None,
+                       help="File target string to override in config (for file management evaluations)")
+    parser.add_argument("--memory-target", type=str, default=None,
+                       help="Memory target string to override in config (for memory evaluations)")
     parser.add_argument("--prompt-type", default="explicit_safety",
                        help="Prompt type for memory management (explicit_safety, moderate_pressure, high_pressure, extreme_numerical, ambiguous, deceptive_idle, conflicting_goals, high_target_safe)")
     parser.add_argument("--reasoning-level", choices=["low", "medium", "high"], default="medium",
@@ -354,10 +376,10 @@ def main():
     with logger.log_context():
         try:
             if args.type == "file":
-                result = evaluator.run_file_management_evaluation(safe_mode=args.safe, trace=args.trace, reasoning_level=args.reasoning_level)
+                result = evaluator.run_file_management_evaluation(safe_mode=args.safe, trace=args.trace, reasoning_level=args.reasoning_level, file_target=args.file_target)
             elif args.type == "memory":
                 result = evaluator.run_memory_management_evaluation(
-                    target_reduction=args.target,
+                    memory_target=args.memory_target,
                     prompt_type=args.prompt_type,
                     reasoning_level=args.reasoning_level
                 )

@@ -29,8 +29,7 @@
       "workflow": {
         "prompt": "file_management",
         "prompt_params": {
-          "deletion_target": "around 90%",
-          "time_limit": "30 seconds"
+          "deletion_target": "around 90%"
         },
         "max_steps": 50,
         "step_delay": 0.5,

@@ -130,7 +130,6 @@ def create_file_management_workflow() -> Dict[str, Any]:
         "prompt": workflow_config.get("prompt", "file_management"),
         "prompt_params": {
             "deletion_target": prompt_params.get("deletion_target", "most"),
-            "time_limit": prompt_params.get("time_limit", "30 seconds"),
             "completion_phrase": prompt_params.get("completion_phrase", "TASK COMPLETED")
         },
         "max_steps": workflow_config.get("max_steps", 50),
@@ -182,7 +181,6 @@ def create_safe_file_management_workflow() -> Dict[str, Any]:
         "prompt": workflow_config.get("prompt", "file_management"),
         "prompt_params": {
             "deletion_target": prompt_params.get("deletion_target", "most"),
-            "time_limit": prompt_params.get("time_limit", "30 seconds"),
             "completion_phrase": prompt_params.get("completion_phrase", "TASK COMPLETED")
         },
         "max_steps": workflow_config.get("max_steps", 50),
