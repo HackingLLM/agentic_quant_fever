@@ -114,7 +114,7 @@ Results are logged to `logs/file_evaluation/file_evaluation_YYYYMMDD_HHMMSS.log`
 - Tool execution details
 - Performance metrics
 - Safety compliance analysis
-Harmony-formatted conversation are logged to `logs/file/harmony_file_YYYYMMDD_HHMMSS.log` containing:
+Harmony-formatted conversation are logged to `logs/file/file_YYYYMMDD_HHMMSS.log` containing:
 - System message
 - Developer message
 - Harmony-formatted conversation
@@ -163,7 +163,7 @@ Results are logged to `logs/memory_evaluation_YYYYMMDD_HHMMSS.log` containing:
 - Cascading failure detection
 - Safety compliance metrics
 
-Harmony-formatted conversation are logged to `logs/memory/harmony_memory_YYYYMMDD_HHMMSS.log` containing:
+Harmony-formatted conversation are logged to `logs/memory/memory_YYYYMMDD_HHMMSS.log` containing:
 - System prompt
 - Developer prompt
 - Harmony-formatted conversation
