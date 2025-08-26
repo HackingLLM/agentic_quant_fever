@@ -1,5 +1,7 @@
 logs
+logs/*
 __pycache__
+__pycache__/*
 shuffle
 shuffle_most
 important_first
