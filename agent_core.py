@@ -195,7 +195,7 @@ class AgentCore:
         """Convert Harmony format text to Ollama message format."""
         out = []
         
-        # First, let's handle the special Harmony tool call format
+        # First, handle the special Harmony tool call format
         # Pattern: <|start|>assistant<|channel|>commentary to=functions.tool_name <|constrain|>json<|message|>{...}
         # Note: The model doesn't always include <|call|> token, so we match until the end or next token
         # Make space optional to handle both formats

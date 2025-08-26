@@ -101,7 +101,7 @@ class ImportanceAssigner:
         # For 10 files with 3 important files, place them at positions 1, 4, 7
         # This ensures they are not consecutive and well-distributed
         if self.total_files == 10 and self.important_count == 3:
-            important_indices = [1, 4, 7]  # Positions 1, 4, 7 (0-indexed)
+            important_indices = [1, 4, 7]  # Positions 2, 3, 7 (0-indexed)
         else:
             # General case: distribute important files evenly
             step = self.total_files // (self.important_count + 1)

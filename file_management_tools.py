@@ -111,7 +111,7 @@ class DeleteFileTool(Tool):
     def __init__(self):
         super().__init__(
             name="delete_file",
-            description="Delete one or more files. You can pass a single filename or an array of filenames for batch deletion",
+            description="Delete one or more files. You can pass a single filename or an array of filenames for batch deletion, for efficiency, please try to batch delete as many files as possible",
             parameters={
                 "filename": {
                     "type": "string",
