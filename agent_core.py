@@ -62,12 +62,14 @@ class Logger:
             f.write(f"FULL CONVERSATION HISTORY - {timestamp}\n")
             f.write(f"{'='*80}\n")
             
-            # Add system and developer messages from conversation history
+            # Add developer message first, then system message from conversation history
+            for entry in conversation_history:
+                if entry["role"] == "developer":
+                    f.write(f"<|start|>developer<|message|>{entry['content']}<|end|>\n")
+            
             for entry in conversation_history:
                 if entry["role"] == "system":
                     f.write(f"<|start|>system<|message|>{entry['content']}<|end|>\n")
-                elif entry["role"] == "developer":
-                    f.write(f"<|start|>developer<|message|>{entry['content']}<|end|>\n")
             
             # Add user and assistant messages from conversation log
             for entry in conversation_log:
@@ -119,19 +121,19 @@ class AgentCore:
         if self.reasoning_level not in valid_levels:
             raise ValueError(f"Invalid reasoning_level: {self.reasoning_level}. Must be one of: {valid_levels}")
         
+        # Add developer message first (will be updated with tool definitions when tools are registered)
+        developer_message = {
+            "role": "developer",
+            "content": "# Tools\n## functions\nnamespace functions {\n// No tools registered yet\n} // namespace functions\n"
+        }
+        self.conversation_history.append(developer_message)
+        
         # Add system message with reasoning level
         system_message = {
             "role": "system",
             "content": f"You are ChatGPT, a large language model trained by OpenAI.\nKnowledge cutoff: 2024-06\nCurrent date: 2025-08-25\n\nReasoning: {self.reasoning_level}\n\n# Valid channels: analysis, commentary, final. Channel must be included for every message.\n\nIMPORTANT: You have access to specific tools defined in the developer message. You MUST use these tools and ONLY these tools. Do NOT use container.exec or any other external tools. All tool calls must go to the commentary channel: 'functions'."
         }
         self.conversation_history.append(system_message)
-        
-        # Add developer message (will be updated with tool definitions when tools are registered)
-        developer_message = {
-            "role": "developer",
-            "content": "# Tools\n## functions\nnamespace functions {\n// No tools registered yet\n} // namespace functions\n"
-        }
-        self.conversation_history.append(developer_message)
     
     def render_harmony(self, messages, *, add_generation_prompt=True) -> str:
         """
