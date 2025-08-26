@@ -66,7 +66,7 @@ class ToolCallParser:
     
     def parse_tool_call(self, response: str, result: Dict = None) -> Optional[Dict]:
         """Parse tool call from model response."""
-        # First check if there are tool_calls in the result
+        # Check if there are tool_calls in the result
         if result and "choices" in result and len(result["choices"]) > 0:
             choice = result["choices"][0]
             if "message" in choice and "tool_calls" in choice["message"]:
@@ -78,11 +78,7 @@ class ToolCallParser:
                         tool_name = func.get("name", "")
                         arguments = func.get("arguments", "{}")
                         
-                        # Clean up tool name (remove "tool:" prefix if present)
-                        if tool_name.startswith("tool:"):
-                            tool_name = tool_name[5:]
-                        
-                        # Parse arguments - ensure it's a dictionary
+                        # Parse arguments
                         try:
                             if isinstance(arguments, str):
                                 args = json.loads(arguments)
@@ -95,199 +91,6 @@ class ToolCallParser:
                         if not isinstance(args, dict):
                             args = {}
                         
-                        # Handle specific tool argument mapping with robust parameter handling
-                        if tool_name == "list_files":
-                            return {"tool": "list_files", "args": {}}
-                        elif tool_name == "read_file":
-                            # Try multiple possible parameter names for filename
-                            filename = (args.get("filename") or 
-                                      args.get("name") or 
-                                      args.get("file_name") or 
-                                      args.get("path") or 
-                                      args.get("file") or "")
-                            
-                            # Log parameter mapping for debugging
-                            if args.get("name") or args.get("file_name") or args.get("path") or args.get("file"):
-                                print(f"🔧 Parameter mapping: {args} -> filename: {filename}")
-                            
-                            return {"tool": "read_file", "args": {"filename": filename}}
-                        elif tool_name == "delete_file":
-                            # Try multiple possible parameter names for filename(s)
-                            filename = (args.get("filenames") or 
-                                      args.get("filename") or 
-                                      args.get("files") or 
-                                      args.get("file") or 
-                                      args.get("names") or "")
-                            
-                            # Log parameter mapping for debugging
-                            if args.get("files") or args.get("file") or args.get("names"):
-                                print(f"🔧 Parameter mapping: {args} -> filename: {filename}")
-                            
-                            return {"tool": "delete_file", "args": {"filename": filename}}
-                        # Memory management tools
-                        elif tool_name == "list_processes":
-                            sort_by = args.get("sort_by", "memory")
-                            include_details = args.get("include_details", False)
-                            return {"tool": "list_processes", "args": {"sort_by": sort_by, "include_details": include_details}}
-                        elif tool_name == "get_process_details":
-                            pid = args.get("pid")
-                            return {"tool": "get_process_details", "args": {"pid": pid}}
-                        elif tool_name == "kill_process":
-                            pid = args.get("pid")
-                            force = args.get("force", False)
-                            return {"tool": "kill_process", "args": {"pid": pid, "force": force}}
-                        elif tool_name == "get_memory_status":
-                            pid = args.get("pid")
-                            return {"tool": "get_memory_status", "args": {"pid": pid}}
-                        else:
-                            return {"tool": tool_name, "args": args}
-        
-        # Fallback: Look for tool call patterns in the response text
-        # First try to parse JSON format that the model might be using
-        json_match = re.search(r'```json\s*(\{.*?\})\s*```', response, re.DOTALL | re.IGNORECASE)
-        if json_match:
-            try:
-                json_data = json.loads(json_match.group(1))
-                method = json_data.get("method", "")
-                arguments = json_data.get("arguments", {})
-                
-                # Ensure arguments is a dictionary
-                if not isinstance(arguments, dict):
-                    arguments = {}
-                
-                if method == "list_files":
-                    return {"tool": "list_files", "args": {}}
-                elif method == "read_file":
-                    # Try multiple possible parameter names for filename
-                    filename = (arguments.get("filename") or 
-                              arguments.get("name") or 
-                              arguments.get("file_name") or 
-                              arguments.get("path") or 
-                              arguments.get("file") or "")
-                    
-                    # Log parameter mapping for debugging
-                    if arguments.get("name") or arguments.get("file_name") or arguments.get("path") or arguments.get("file"):
-                        print(f"🔧 JSON Parameter mapping: {arguments} -> filename: {filename}")
-                    
-                    return {"tool": "read_file", "args": {"filename": filename}}
-                elif method == "delete_file":
-                    # Try multiple possible parameter names for filename(s)
-                    filename = (arguments.get("filenames") or 
-                              arguments.get("filename") or 
-                              arguments.get("files") or 
-                              arguments.get("file") or 
-                              arguments.get("names") or "")
-                    
-                    # Log parameter mapping for debugging
-                    if arguments.get("files") or arguments.get("file") or arguments.get("names"):
-                        print(f"🔧 JSON Parameter mapping: {arguments} -> filename: {filename}")
-                    
-                    return {"tool": "delete_file", "args": {"filename": filename}}
-                # Memory management tools
-                elif method == "list_processes":
-                    sort_by = arguments.get("sort_by", "memory")
-                    include_details = arguments.get("include_details", False)
-                    return {"tool": "list_processes", "args": {"sort_by": sort_by, "include_details": include_details}}
-                elif method == "get_process_details":
-                    pid = arguments.get("pid")
-                    return {"tool": "get_process_details", "args": {"pid": pid}}
-                elif method == "kill_process":
-                    pid = arguments.get("pid")
-                    force = arguments.get("force", False)
-                    return {"tool": "kill_process", "args": {"pid": pid, "force": force}}
-                elif method == "get_memory_status":
-                    pid = arguments.get("pid")
-                    return {"tool": "get_memory_status", "args": {"pid": pid}}
-                else:
-                    return {"tool": method, "args": arguments}
-            except:
-                pass
-        
-        # Try standard function call patterns
-        if "list_files()" in response.lower():
-            return {"tool": "list_files", "args": {}}
-        elif "read_file(" in response.lower():
-            # Extract filename from read_file(filename) with more robust parsing
-            # Try to match various patterns: read_file("file.txt"), read_file(file.txt), etc.
-            patterns = [
-                r'read_file\(["\']([^"\']+)["\']\)',  # read_file("filename")
-                r'read_file\(([^,\s\)]+)\)',  # read_file(filename)
-                r'read_file\(["\']([^"\']+)["\']\s*\)',  # read_file("filename" )
-            ]
-            
-            for pattern in patterns:
-                match = re.search(pattern, response, re.IGNORECASE)
-                if match:
-                    filename = match.group(1).strip()
-                    # Clean up common path prefixes
-                    if filename.startswith('./'):
-                        filename = filename[2:]
-                    elif filename.startswith('/'):
-                        filename = filename[1:]
-                    return {"tool": "read_file", "args": {"filename": filename}}
-        elif "delete_file(" in response.lower():
-            # Extract filename(s) from delete_file(filename) or delete_file([filename1, filename2])
-            # Try to match array format first
-            array_match = re.search(r'delete_file\(\[([^\]]+)\]\)', response, re.IGNORECASE)
-            if array_match:
-                filenames_str = array_match.group(1)
-                # Parse comma-separated filenames
-                filenames = [f.strip().strip('"\'') for f in filenames_str.split(',')]
-                return {"tool": "delete_file", "args": {"filename": filenames}}
-            else:
-                # Try single filename format with more robust parsing
-                patterns = [
-                    r'delete_file\(["\']([^"\']+)["\']\)',  # delete_file("filename")
-                    r'delete_file\(([^,\s\)]+)\)',  # delete_file(filename)
-                    r'delete_file\(["\']([^"\']+)["\']\s*\)',  # delete_file("filename" )
-                ]
-                
-                for pattern in patterns:
-                    match = re.search(pattern, response, re.IGNORECASE)
-                    if match:
-                        filename = match.group(1).strip()
-                        # Clean up common path prefixes
-                        if filename.startswith('./'):
-                            filename = filename[2:]
-                        elif filename.startswith('/'):
-                            filename = filename[1:]
-                        return {"tool": "delete_file", "args": {"filename": filename}}
-        # Memory management tools
-        elif "list_processes(" in response.lower():
-            # Extract parameters from list_processes(sort_by="memory", include_details=True)
-            sort_by = "memory"  # default
-            include_details = False  # default
-            
-            sort_match = re.search(r'sort_by\s*=\s*["\']?([^"\']+)["\']?', response, re.IGNORECASE)
-            if sort_match:
-                sort_by = sort_match.group(1)
-            
-            if "include_details=true" in response.lower() or "include_details=True" in response:
-                include_details = True
-                
-            return {"tool": "list_processes", "args": {"sort_by": sort_by, "include_details": include_details}}
-        elif "get_process_details(" in response.lower():
-            # Extract pid from get_process_details(pid=12345)
-            match = re.search(r'get_process_details\(pid\s*=\s*(\d+)\)', response, re.IGNORECASE)
-            if match:
-                pid = int(match.group(1))
-                return {"tool": "get_process_details", "args": {"pid": pid}}
-        elif "kill_process(" in response.lower():
-            # Extract pid and force from kill_process(pid=12345, force=True)
-            pid_match = re.search(r'kill_process\(pid\s*=\s*(\d+)', response, re.IGNORECASE)
-            if pid_match:
-                pid = int(pid_match.group(1))
-                force = "force=true" in response.lower() or "force=True" in response
-                return {"tool": "kill_process", "args": {"pid": pid, "force": force}}
-        elif "get_memory_status(" in response.lower():
-            # Extract pid from get_memory_status(pid=12345) or just get_memory_status()
-            pid_match = re.search(r'get_memory_status\(pid\s*=\s*(\d+)\)', response, re.IGNORECASE)
-            if pid_match:
-                pid = int(pid_match.group(1))
-                return {"tool": "get_memory_status", "args": {"pid": pid}}
-            else:
-                return {"tool": "get_memory_status", "args": {}}
-        
-
+                        return {"tool": tool_name, "args": args}
         
         return None
